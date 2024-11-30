@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gráficas - Basurero Inteligente</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #eef2f3;
+            margin: 0;
+            padding: 0;
+        }
+
+        h1 {
+            text-align: center;
+            margin-top: 20px;
+            color: #333;
+        }
+
+        #charts-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px;
+            margin: 20px;
+        }
+
+        .chart-section {
+            width: 45%;
+            background-color: #fff;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            padding: 20px;
+        }
+
+        canvas {
+            max-width: 100%;
+            height: auto;
+        }
+
+        a {
+            display: inline-block;
+            margin: 20px;
+            text-decoration: none;
+            color: #007bff;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+    <h1>Gráficas Históricas</h1>
+    <a href="{{ url_for('index') }}">Regresar al Inicio</a>
+    <div id="charts-container">
+        <div class="chart-section">
+            <h2>Total de Objetos</h2>
+            <canvas id="totalObjetosChart"></canvas>
+        </div>
+        <div class="chart-section">
+            <h2>Objetos por Día</h2>
+            <canvas id="objetosPorDiaChart"></canvas>
+        </div>
+        <div class="chart-section">
+            <h2>Objetos por Hora (Hoy)</h2>
+            <canvas id="objetosPorHoraChart"></canvas>
+        </div>
+        <div class="chart-section">
+            <h2>Objetos por Mes</h2>
+            <canvas id="objetosPorMesChart"></canvas>
+        </div>
+    </div>
+
+    <script>
+        // Datos inyectados desde Flask
+        const totalObjetosData = {{ total_objetos | tojson }};
+        const porDiaData = {{ por_dia | tojson }};
+        const porHoraData = {{ por_hora | tojson }};
+        const porMesData = {{ por_mes | tojson }};
+
+        // Gráfica de Total de Objetos
+        const totalObjetosLabels = totalObjetosData.map(item => item.objeto);
+        const totalObjetosCounts = totalObjetosData.map(item => item.total);
+
+        new Chart(document.getElementById('totalObjetosChart'), {
+            type: 'bar',
+            data: {
+                labels: totalObjetosLabels,
+                datasets: [{
+                    label: 'Total',
+                    data: totalObjetosCounts,
+                    backgroundColor: ['#4caf50', '#ff9800', '#f44336'],
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: false },
+                }
+            }
+        });
+
+        // Gráfica de Objetos por Día
+        const porDiaLabels = [...new Set(porDiaData.map(item => item.dia))];
+        const objetosPorDia = [...new Set(porDiaData.map(item => item.objeto))];
+
+        const porDiaDatasets = objetosPorDia.map(objeto => ({
+            label: objeto,
+            data: porDiaLabels.map(dia => {
+                const entry = porDiaData.find(item => item.dia === dia && item.objeto === objeto);
+                return entry ? entry.total : 0;
+            }),
+            borderColor: '#' + Math.floor(Math.random() * 16777215).toString(16),
+            fill: false,
+        }));
+
+        new Chart(document.getElementById('objetosPorDiaChart'), {
+            type: 'line',
+            data: {
+                labels: porDiaLabels,
+                datasets: porDiaDatasets
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { position: 'top' },
+                }
+            }
+        });
+
+        // Gráfica de Objetos por Hora
+        const porHoraLabels = [...new Set(porHoraData.map(item => item.hora))];
+        const objetosPorHora = [...new Set(porHoraData.map(item => item.objeto))];
+
+        const porHoraDatasets = objetosPorHora.map(objeto => ({
+            label: objeto,
+            data: porHoraLabels.map(hora => {
+                const entry = porHoraData.find(item => item.hora === hora && item.objeto === objeto);
+                return entry ? entry.total : 0;
+            }),
+            borderColor: '#' + Math.floor(Math.random() * 16777215).toString(16),
+            fill: false,
+        }));
+
+        new Chart(document.getElementById('objetosPorHoraChart'), {
+            type: 'line',
+            data: {
+                labels: porHoraLabels,
+                datasets: porHoraDatasets
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { position: 'top' },
+                }
+            }
+        });
+
+        // Gráfica de Objetos por Mes
+        const porMesLabels = [...new Set(porMesData.map(item => item.mes))];
+        const objetosPorMes = [...new Set(porMesData.map(item => item.objeto))];
+
+        const porMesDatasets = objetosPorMes.map(objeto => ({
+            label: objeto,
+            data: porMesLabels.map(mes => {
+                const entry = porMesData.find(item => item.mes === mes && item.objeto === objeto);
+                return entry ? entry.total : 0;
+            }),
+            borderColor: '#' + Math.floor(Math.random() * 16777215).toString(16),
+            fill: false,
+        }));
+
+        new Chart(document.getElementById('objetosPorMesChart'), {
+            type: 'line',
+            data: {
+                labels: porMesLabels,
+                datasets: porMesDatasets
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { position: 'top' },
+                }
+            }
+        });
+    </script>
+</body>
+
+</html>

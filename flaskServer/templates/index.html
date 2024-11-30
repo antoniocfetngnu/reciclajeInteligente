@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SCADA - Basurero Inteligente</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #eef2f3;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: row;
+            height: 100vh;
+            /* Pantalla completa */
+        }
+
+        #left-panel,
+        #right-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #container {
+            background-image: url('/static/contenedor.png');
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-position: center;
+            width: 450px;
+            height: 600px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            position: relative;
+            align-items: center;
+        }
+        a {
+            display: inline-block;
+            margin: 20px;
+            text-decoration: none;
+            color: #007bff;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        #fill-container {
+            padding-bottom: 20px;
+            padding-left: 28px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: center;
+            height: 80%;
+            width: 90%;
+            position: absolute;
+            bottom: 0;
+        }
+
+        .rectangle {
+            width: 70%;
+            height: 30%;
+            margin: 3px 0;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        #right-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            /* Espaciado entre secciones */
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            width: 90%;
+            max-width: 400px;
+            margin: 20px;
+        }
+
+        .section {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            text-align: center;
+            background-color: #f9f9f9;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s;
+        }
+
+        .section:hover {
+            transform: scale(1.03);
+        }
+        h1 {
+            font-size: 24px;
+            margin: 5px 0 2px 0; /* Reduce espacio entre h1 y h2 */
+            color: #444;
+        }
+
+        h2 {
+            font-size: 20px;
+            margin: 2px 0 10px 0; /* Menor espacio bajo h2 */
+            color: #666;
+        }
+
+        .title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .value {
+            font-size: 22px;
+            font-weight: bold;
+            color: #444;
+        }
+
+        .subsection {
+            margin-top: 15px;
+        }
+
+        .subsection-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #555;
+        }
+
+        .subsection-value {
+            font-size: 20px;
+            font-weight: bold;
+            color: #777;
+        }
+
+        img {
+            width: 200px;
+            height: 200px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="left-panel">
+        <div id="container">
+            <div id="fill-container"></div>
+        </div>
+    </div>
+    <div id="right-panel">
+        <h1>Sistema de monitoreo</h1>
+        <h2>Basurero Inteligente</h2>
+        
+    <a href="{{ url_for('graficas') }}">Ir a Gráficas</a>
+        <div class="section" id="capacidad-section">
+            <div class="title">Capacidad</div>
+            <div class="value" id="capacidad-value">Bajo</div>
+        </div>
+        <div class="section" id="status-section">
+            <div class="title">Estado</div>
+            <div class="value" id="status-value">En espera</div>
+        </div>
+        <div class="section" id="last-object-section">
+            <div class="title">Último objeto detectado</div>
+            <div class="value" id="last-object-value">Nada</div>
+        </div>
+        <div class="section" id="last-object-section" style="width: 200px; height: 200px;">
+            <img src="" alt="" id="imagen-detectada">
+        </div>
+        
+
+    </div>
+
+    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+    <script>
+        const socket = io();
+
+        const fillContainer = document.getElementById('fill-container');
+        const capacidadvalue = document.getElementById('capacidad-value');
+        const lastobjectvalue = document.getElementById('last-object-value');
+        const imagendetectada = document.getElementById('imagen-detectada');
+        window.onload = () => {
+            fetch('/Nivel/1') // Enviar el valor inicial 1 al servidor
+                .then(response => console.log('Nivel inicial enviado'))
+                .catch(error => console.error('Error al enviar nivel inicial:', error));
+
+        };
+        socket.on('imagen', (data) => {
+            const value = data.value; // Ruta relativa enviada desde el servidor
+            console.log(`Imagen completa: ${value}`);
+            imagendetectada.src = value;
+
+        });
+        socket.on('objeto', (data) => {
+            const value = data.value;
+            console.log(`objeto: ${value}`);
+            lastobjectvalue.textContent = value;
+        });
+        socket.on('estado', (data) => {
+            const value = data.value;
+            console.log(`estado: ${value}`);
+            const statusvalue = document.getElementById('status-value');
+            if (value == 1) {
+                statusvalue.textContent = "Detectando"
+            } else {
+                statusvalue.textContent = "En espera"
+            }
+        });
+        socket.on('nivel', (data) => {
+            const value = data.value;
+            console.log(`Valor recibido: ${value}`);
+            fillContainer.innerHTML = '';
+
+            let color = '';
+
+            if (value === 1) {
+                color = 'green';
+                capacidadvalue.textContent = 'Bajo';
+            } else if (value === 2) {
+                color = 'yellow';
+                capacidadvalue.textContent = 'Medio';
+            } else if (value === 3) {
+                color = 'red';
+                capacidadvalue.textContent = 'Alto';
+            }
+
+
+            // Crear rectángulos según el valor
+            for (let i = 0; i < value; i++) {
+                const rectangle = document.createElement('div');
+                rectangle.classList.add('rectangle');
+                rectangle.style.backgroundColor = color;
+                fillContainer.appendChild(rectangle);
+            }
+        });
+        // Escuchar el evento 'update' para recibir datos del servidor
+
+    </script>
+</body>
+
+</html>
